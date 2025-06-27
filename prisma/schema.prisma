@@ -48,7 +48,8 @@ model Website {
   pages    Page[]
   transactions Transaction[]
 
-
+  template Template @relation(fields: [templateId], references: [id])
+  templateId String
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -70,6 +71,8 @@ model Template {
   name        String
   description String?
   thumbnail   String
+
+  website Website[]
 
   pages TemplatePage[]
 
