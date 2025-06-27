@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String  @id @default(cuid())
+  clerkId   String  @unique
+  firstName String?
+  lastName  String?
+  email     String  @unique
+  imageUrl  String?
+  telebirrNumber String?
+  isPayed Boolean @default(false)
+
+  website Website[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Website {
+  id           String    @id @default(cuid())
+  name         String
+  description  String
+  subdomain    String    @unique
+  logo         String?
+  isPublished  Boolean   @default(false)
+
+  owner        User      @relation(fields: [ownerId], references: [id])
+  ownerId      String
+
+  otpCode OtpCode[]
+  members      Member[]
+  socialMedias SocialMedia[]
+  courses      Course[]
+  pages    Page[]
+  transactions Transaction[]
+
+
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Page {
+  id         String   @id @default(cuid())
+  name       String   // name of the page
+  slug       String   // '/', '/about'
+  website    Website  @relation(fields: [websiteId], references: [id])
+  websiteId  String
+  sections   Json     // Array of section blocks
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  thumbnail   String
+
+  pages TemplatePage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TemplatePage {
+  id         String @id @default(cuid())
+  title      String
+  slug       String
+  template   Template @relation(fields: [templateId], references: [id])
+  templateId String
+
+  sections   Json  // [{id: "hero", data: {}}] etc.
+}
+
+model SocialMedia {
+  id         String   @id @default(cuid())
+  platform   String
+  url        String
+  website    Website  @relation(fields: [websiteId], references: [id])
+  websiteId  String
+}
+
+model Member {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String?
+  email        String
+  phoneNumber  String
+
+  website      Website  @relation(fields: [websiteId], references: [id])
+  websiteId    String
+  transactions Transaction[]
+  otpCode OtpCode[]
+  enrollments  CourseEnrollment[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([email, websiteId])
+  @@unique([phoneNumber, websiteId])
+}
+
+model Course {
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  thumbnail    String
+  price        Float
+  tag          String[]
+  status       COURSE_STATUS @default(DRAFT)
+
+  website      Website   @relation(fields: [websiteId], references: [id])
+  websiteId    String
+  transactions Transaction[]
+  lessons      Lesson[]
+  enrollments  CourseEnrollment[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum COURSE_STATUS {
+  DRAFT
+  PUBLISHED
+}
+
+model Lesson {
+  id         String   @id @default(cuid())
+  title      String
+  content    String // markdown or richtext
+  order      Int
+  course     Course  @relation(fields: [courseId], references: [id])
+  courseId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CourseEnrollment {
+  id         String   @id @default(cuid())
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   String
+
+  member     Member   @relation(fields: [memberId], references: [id])
+  memberId   String
+
+  enrolledAt DateTime @default(now())
+  progress   Float    @default(0)
+  completedAt DateTime?
+
+  @@unique([courseId, memberId])
+}
+
+model Transaction {
+  id           String   @id @default(cuid())
+  member       Member   @relation(fields: [memberId], references: [id])
+  memberId     String
+  website      Website  @relation(fields: [websiteId], references: [id])
+  websiteId    String
+  course       Course   @relation(fields: [courseId], references: [id])
+  courseId     String
+  refNumber    String
+  amount       Float
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+
+  website Website @relation(fields: [websiteId], references: [id])
+  websiteId String
+  
+  member    Member? @relation(fields: [memberId], references: [id])
+  memberId  String? @unique
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
