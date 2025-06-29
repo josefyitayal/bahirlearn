@@ -1,2 +1,5 @@
 export * from "./actions"
 export * from "./components/CourseForm"
+export * from "./components/LessonSidebar"
+export * from "./components/LessonSidebarItem"
+export * from "./components/SaveButton"
